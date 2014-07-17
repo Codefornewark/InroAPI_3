@@ -1,0 +1,190 @@
+<html>
+  <head>
+    <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+    <link rel="stylesheet" href="bootstrap.min.css">
+	<title>Property Map</title>
+    <script src="https://code.jquery.com/jquery-1.9.1.min.js"></script>
+    <style>
+      html, body, #map-canvas {
+        height: 100%;
+        margin: 0px;
+        padding: 50px
+      }
+    </style>
+    <script src="https://maps.googleapis.com/maps/api/js?v=3.exp&sensor=false"></script>
+    <script type='text/javascript'>
+    function initialize(entries) {
+      
+	  
+	  var xhr = new XMLHttpRequest();
+	  xhr.onload = function(){
+      
+	  
+		
+	  
+      var response = JSON.parse(xhr.responseText);
+      var records = response.result.records;
+      
+      var pins = [records.length];
+      var infowindow = new google.maps.InfoWindow();
+      var contentstring;
+      var flyout;
+      
+
+      for (var i=0; i<records.length; i++)
+      {
+        pins[i] = new google.maps.Marker
+        ({
+          position: new google.maps.LatLng(records[i]["Latitude"], records[i]["Longitude"]),
+          map: map,
+          title: records[i]["Vital House Number"] + records[i]["Vital Street Name"]
+          });
+
+        switch(records[i]["class"]) {
+            case 'A':
+                  pins[i].setIcon('red_MarkerA.png');
+                  break;
+            case 'B':
+            pins[i].setIcon('yellow_MarkerB.png');
+            break;
+          case 'C':
+            pins[i].setIcon('purple_MarkerC.png');
+            break;
+          case 'D':
+            pins[i].setIcon('pink_MarkerD.png');
+            break;
+          case 'E':
+            pins[i].setIcon('paleblue_MarkerE.png');
+            break;
+          case 'F':
+            pins[i].setIcon('darkgreen_MarkerF.png');
+            break;
+          case 'V':
+            pins[i].setIcon('orange_MarkerV.png');
+            break;
+          default:
+          }
+		
+		for (var j = 0; j < entries.length; j++){
+			if (entries[j]["address"] == records[i]["Vital House Number"] + records[i]["Vital Street Name"]){
+				pins[i].setIcon('http://dresserpalmerhouse.com/_images/houseicon.png');
+			}
+		}
+        
+
+        contentstring = '<div id="content">'+
+            '<h2 id="firstHeading" class="firstHeading">'+records[i]["Vital House Number"] + records[i]["Vital Street Name"]+'</h2>'+
+            '<div id="bodyContent">'+
+			'<p><b>Block:</b>'+records[i]["Block"]+'<b> Lot: </b>'+records[i]["Lot"]+'</br></p>'+ 
+			'<p><b>Owner:</b>'+records[i]["Owner Name"]+'</br><b>Inspected: </b>'+records[i]["DateText"]+'</br></p>'+ 
+            '</div>'+
+              '</div>';
+
+        makeInfoWindowEvent(map, infowindow, contentstring, pins[i]);
+        
+      }
+      };
+
+      var mapOptions = {
+        zoom: 13,
+        center: new google.maps.LatLng(40.748444,-74.193531)
+      };
+
+      var map = new google.maps.Map(document.getElementById('map-canvas'), mapOptions);
+	  xhr.open('GET','http://data.codefornewark.org/api/action/datastore_search?resource_id=dc3d80c5-a71d-4349-9bb4-cf2b7b5e0d99&q=vacant%20only&limit=10000',true);
+	  xhr.send(null);
+    }
+
+    function makeInfoWindowEvent(map, infowindow, contentstring, marker) {
+      google.maps.event.addListener(marker, 'click', function() {
+        infowindow.setContent(contentstring);
+        infowindow.open(map, marker);
+      });
+
+    }
+
+    
+		
+		
+    window.onload = function() {
+        var s = document.createElement('script');
+        s.type = 'text/javascript';
+        s.async = true;
+        s.src = 'http://spreadsheets.google.com/feeds/list/1CU9NMoztTdpGvibLELITEMrQ2ISEZ5-DMnQW2ViWoW8/default/public/basic?alt=json-in-script&callback=getspreadsheet';
+        var x = document.getElementsByTagName('script')[0];
+        x.parentNode.insertBefore(s, x);
+    
+	
+		//code on posting to googleform https://wiki.base22.com/pages/viewpage.action?pageId=72942000
+		$("#button").click( function()
+			{
+			$.ajax({
+                url: "https://docs.google.com/forms/d/1nJZRlnV86duqyi6OxbM21fB6nJ35nRzZrRV5MitDdms/formResponse",
+                data: {"entry.632889031": $('#name').val(), "entry.394627455": $('#address').val()},
+                type: "POST",
+                dataType: "xml",
+                statusCode: {
+                    0: function (){
+ 
+                        alert("success!");
+						//$('#name').val("");
+						//$('#address').val("");
+                        location.reload();
+						//Success message
+                    },
+                    200: function (){
+                        alert("200");
+                        //Success Message
+                    }
+                }
+            });
+			}
+		);
+	
+	}
+    
+	function getspreadsheet(data) {
+        var entries = [];
+        for (var i=0; i<data.feed.entry.length; i++)
+        {
+          var temp = data.feed.entry[i].content.$t.replace("address: ",'"address": "').replace(", friendsname: ",'", "friendsname": "');
+          temp += '"';
+          temp = "{"+temp+"}";
+          entries.push(JSON.parse(temp));
+		  $('#text').append('<div>'+entries[i]["friendsname"]+' lives at '+entries[i]["address"]+'</div>');
+        } 
+        //$('#holder').append('<iframe id="iframe" src="https://docs.google.com/forms/d/1nJZRlnV86duqyi6OxbM21fB6nJ35nRzZrRV5MitDdms/viewform?embedded=true" width="760" height="300" frameborder="0" marginheight="0" marginwidth="0">Loading...</iframe>');
+		//document.getElementById("iframe").onload = function() {
+		//	top.location.reload();
+		//}
+	
+	
+		initialize(entries);
+	
+	}    
+	
+    </script> 
+  </head>  
+
+  <body>
+    <div class="jumbotron">
+		<h1>Code for Newark</h1>
+		<h2>Inro to APIs part 3</h2>
+	</div>
+	<h1 id="holder">Form for submitting data to google form</h1><br>
+	<div class="well well-lg">
+	Friend's name: <input type="text" id="name"><br><br>
+	Their Address: <input type="text" id="address"><br>
+	</div>
+	<button id="button" class="btn btn-primary btn-lg btn-block">Submit Data</button>
+	
+	<h1>Show data from googledoc</h1>
+    
+	<div id="text"></div>
+	
+    <h1>Map of Vacant Properties</h1>
+    <div id="map-canvas"></div>
+  </body>
+</html>
+
+
